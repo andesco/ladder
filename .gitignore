@@ -3,3 +3,7 @@ ladder
 
 VERSION
 output.css
+
+# macOS
+
+**/.DS_Store

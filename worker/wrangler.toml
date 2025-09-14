@@ -1,0 +1,21 @@
+name = "ladder"
+main = "index.js"
+compatibility_date = "2025-09-13"
+# account_id = "" # optional: your unqiue Cloudflare account ID
+
+workers_dev = true # use default {hostname}.{account}.workers.dev
+
+# [[routes]]
+# pattern = "ladder.example.com"
+# custom_domain = true
+
+# [build]
+# command = "npm run build"
+
+[assets]
+directory = "./public"
+
+[[rules]]
+type = "CompiledWasm"
+globs = ["**/*.wasm"]
+fallthrough = false

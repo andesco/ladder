@@ -1,0 +1,21 @@
+name = "ladder"
+main = "index.js"
+compatibility_date = "2023-07-24"
+account_id = "0a15c5f9d39350baa992ff9f48efc1c8" # `wrangler.toml`: disabled & ""
+
+workers_dev = false # use default {hostname}.{account}.workers.dev
+
+[[routes]] # `wrangler.toml`: disabled & "ladder.example.com" & false
+pattern = "ladder.andrewe.dev"
+custom_domain = true
+
+#[build]
+# command = "npm run build"
+
+[assets]
+directory = "./public"
+
+[[rules]]
+type = "CompiledWasm"
+globs = ["**/*.wasm"]
+fallthrough = false

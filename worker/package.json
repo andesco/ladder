@@ -1,0 +1,29 @@
+{
+	"name": "lader",
+	"version": "0.0.1",
+	"description": "Ladderflare Cloudflare Worker - HTTP proxy for bypassing paywalls",
+	"main": "index.js",
+	"scripts": {
+		"init": "npm install && go mod tidy",
+		"build:wasm": "GOOS=js GOARCH=wasm go build -o main.wasm .",
+		"build:rules": "go run scripts/generate.go --type=rules ../rulesets/ > rulesets/rules.go",
+		"build:urls": "go run scripts/generate.go --type=urls ../rulesets/ > rulesets/urls.go",
+		"build": "npm run build:wasm && npm run build:rules && npm run build:urls",
+		"deploy": "wrangler deploy",
+		"deploy:local": "wrangler deploy --config wrangler.local.toml",
+		"dev": "wrangler dev",
+		"dev:local": "wrangler dev --local --config wrangler.local.toml"
+	},
+	"author": "Andrew Escobar",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/andesco/ladder/ladderflare"
+	},
+	"engines": {
+		"node": ">=16.0.0"
+	},
+	"devDependencies": {
+		"wrangler": "^4.36.0"
+	}
+}
