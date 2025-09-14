@@ -6,9 +6,7 @@
 	"scripts": {
 		"init": "npm install && go mod tidy",
 		"build:wasm": "GOOS=js GOARCH=wasm go build -o main.wasm .",
-		"build:rules": "go run scripts/generate.go --type=rules ../rulesets/ > rulesets/rules.go",
-		"build:urls": "go run scripts/generate.go --type=urls ../rulesets/ > rulesets/urls.go",
-		"build": "npm run build:wasm && npm run build:rules && npm run build:urls",
+		"build": "npm run build:wasm",
 		"deploy": "wrangler deploy",
 		"deploy:local": "wrangler deploy --config wrangler.local.toml",
 		"dev": "wrangler dev",

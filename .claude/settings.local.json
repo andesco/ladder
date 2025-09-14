@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:rules:*)",
+      "Bash(sed:*)",
+      "Bash(go mod:*)",
+      "Bash(go:*)",
+      "Bash(GOOS=js GOARCH=wasm go build -o main.wasm)",
+      "Bash(npm run build:wasm:*)",
+      "Bash(npm run deploy:local:*)",
+      "Bash(git add:*)",
+      "Bash(git rebase:*)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,28 +1,24 @@
+
 package main
 
 import (
 	"fmt"
-	"ladderflare/worker/rulesets"
 	"syscall/js"
 )
 
-// Global ruleset variable
-var rulesSet []rulesets.Rule
-
 func main() {
 	fmt.Println("Go main() function starting...")
-	
-	// Export the fetch function to JavaScript with a unique name
+
+	// Export the fetch function to JavaScript
 	js.Global().Set("goFetch", js.FuncOf(fetchHandler))
 
 	fmt.Println("Go WASM module loaded and ready")
-	
+
 	// Keep the program running
 	select {}
 }
 
 func fetchHandler(this js.Value, args []js.Value) interface{} {
-	// The fetch function receives three arguments: request, env, ctx
 	if len(args) < 3 {
 		return js.Global().Get("Promise").Call("reject", js.ValueOf("Expected 3 arguments: request, env, ctx"))
 	}
@@ -31,15 +27,15 @@ func fetchHandler(this js.Value, args []js.Value) interface{} {
 	env := args[1]
 	ctx := args[2]
 
-	// Return a Promise
-	return js.Global().Get("Promise").New(js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		resolve := args[0]
-		reject := args[1]
+	// Return a Promise that resolves with the response
+	return js.Global().Get("Promise").New(js.FuncOf(func(this js.Value, promiseArgs []js.Value) interface{} {
+		resolve := promiseArgs[0]
+		reject := promiseArgs[1]
 
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					reject.Invoke(js.ValueOf(fmt.Sprintf("Error: %v", r)))
+					reject.Invoke(js.ValueOf(fmt.Sprintf("Panic: %v", r)))
 				}
 			}()
 
@@ -56,96 +52,61 @@ func fetchHandler(this js.Value, args []js.Value) interface{} {
 }
 
 func handleRequest(request, env, ctx js.Value) (js.Value, error) {
-	// Initialize ruleset on first request if not already done
-	if len(rulesSet) == 0 {
-		initRuleset(env)
-	}
-
-	// Get the URL from the request
 	url := request.Get("url").String()
-
-	// Parse the URL to get the path
 	urlObj := js.Global().Get("URL").New(url)
 	path := urlObj.Get("pathname").String()
 
-	// Route the request based on the path for dynamic handlers
+	// Route to special handlers
 	switch {
-	
 	case path == "/ruleset":
-		return rulesetHandler(request, env, ctx)
+		// This handler might need adjustment depending on how rules are exposed
+		// return rulesetHandler(request, env, ctx)
+		return createErrorResponse(501, "Not Implemented"), nil
 	case path == "/test":
-		return testHandler(request, env, ctx)
-	case len(path) > 5 && path[:5] == "/raw/":
+		// This handler might need adjustment
+		// return testHandler(request, env, ctx)
+		return createErrorResponse(501, "Not Implemented"), nil
+	case strings.HasPrefix(path, "/raw/"):
 		return rawHandler(request, env, ctx)
-	case len(path) > 5 && path[:5] == "/api/":
+	case strings.HasPrefix(path, "/api/"):
 		return apiHandler(request, env, ctx)
 	}
 
-	// For all other paths, try to serve a static asset first.
-	// If the asset is not found (404), fall back to the proxy handler.
-	// This requires returning a new promise that wraps the async logic.
-	handlerPromise := js.Global().Get("Promise").New(js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		resolve := args[0]
-		reject := args[1]
+	// For all other paths, attempt to serve a static asset first, then fall back to the proxy.
+	assets := env.Get("ASSETS")
+	if assets.IsUndefined() {
+		// No assets binding, go directly to proxy
+		return proxyHandler(request, env, ctx)
+	}
 
-		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					reject.Invoke(js.ValueOf(fmt.Sprintf("Error in asset/proxy fallback: %v", r)))
-				}
-			}()
+	// Return a new Promise that wraps the asset fetching and fallback logic
+	return js.Global().Get("Promise").New(js.FuncOf(func(this js.Value, promiseArgs []js.Value) interface{} {
+		resolve := promiseArgs[0]
+		reject := promiseArgs[1]
 
-			// 1. Try to fetch from ASSETS
-			assets := env.Get("ASSETS")
-			if assets.IsUndefined() {
-				// If ASSETS is not available, go straight to proxy handler
-				proxyResponse, proxyErr := proxyHandler(request, env, ctx)
-				if proxyErr != nil {
-					reject.Invoke(js.ValueOf(proxyErr.Error()))
-					return
-				}
-				resolve.Invoke(proxyResponse)
-				return
-			}
+		assetResponsePromise := assets.Call("fetch", request)
 
-			assetResponsePromise := assets.Call("fetch", request)
-			
-			// Use .then() to handle the promise resolution
-			assetResponsePromise.Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-				response := args[0] // The resolved value of the promise (the Response object)
-
-				// 2. Check if the asset was found
-				if response.Get("status").Int() != 404 {
-					// Asset found, resolve the outer promise with the response
-					resolve.Invoke(response)
+		assetResponsePromise.Call("then", js.FuncOf(func(this js.Value, thenArgs []js.Value) interface{} {
+			response := thenArgs[0]
+			if response.Get("status").Int() != 404 {
+				// Asset found, return it
+				resolve.Invoke(response)
+			} else {
+				// Asset not found, fall back to the proxy handler
+				proxyResponse, err := proxyHandler(request, env, ctx)
+				if err != nil {
+					reject.Invoke(js.ValueOf(err.Error()))
 				} else {
-					// 3. Asset not found, fall back to proxyHandler
-					proxyResponse, proxyErr := proxyHandler(request, env, ctx)
-					if proxyErr != nil {
-						reject.Invoke(js.ValueOf(proxyErr.Error()))
-						return nil // Return nil from this inner callback
-					}
 					resolve.Invoke(proxyResponse)
 				}
-				return nil // Always return nil from this inner callback
-			}), js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-				// Handle promise rejection (e.g., network error)
-				err := args[0]
-				reject.Invoke(js.ValueOf("Error fetching from assets: " + err.String()))
-				return nil // Always return nil from this inner callback
-			}))
-		}()
+			}
+			return nil
+		}), js.FuncOf(func(this js.Value, catchArgs []js.Value) interface{} {
+			// Error fetching from assets, reject the promise
+			reject.Invoke(catchArgs[0])
+			return nil
+		}))
 
 		return nil
-	}))
-
-	return handlerPromise, nil
-}
-
-
-
-func initRuleset(env js.Value) {
-	// Load rules from generated rules (downloaded from ladder-rules repo)
-	rulesSet = rulesets.GeneratedRules
-	fmt.Printf("Loaded %d rules from ladder-rules repository\n", len(rulesSet))
+	})), nil
 }
