@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/everywall/ladder/pkg/ruleset"
+	"github.com/andesco/ladder/pkg/ruleset"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
