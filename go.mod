@@ -1,4 +1,4 @@
-module github.com/everywall/ladder
+module github.com/andesco/ladder
 
 go 1.21.1
 

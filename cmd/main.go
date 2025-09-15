@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/everywall/ladder/handlers"
+	"github.com/andesco/ladder/handlers"
 	"github.com/everywall/ladder/handlers/cli"
 
 	"github.com/akamensky/argparse"
