@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"ladder/pkg/ruleset"
+	"github.com/everywall/ladder/pkg/ruleset"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gofiber/fiber/v2"
@@ -105,7 +105,7 @@ func ProxySite(rulesetPath string) fiber.Handler {
 		}
 
 		queries := c.Queries()
-		body, _, resp, err := fetchSite(url, queries)
+		body, _, resp, err := FetchSite(url, queries)
 		if err != nil {
 			log.Println("ERROR:", err)
 			c.SendStatus(fiber.StatusInternalServerError)
@@ -156,7 +156,7 @@ func modifyURL(uri string, rule ruleset.Rule) (string, error) {
 	return newUrl.String(), nil
 }
 
-func fetchSite(urlpath string, queries map[string]string) (string, *http.Request, *http.Response, error) {
+func FetchSite(urlpath string, queries map[string]string) (string, *http.Request, *http.Response, error) {
 	urlQuery := "?"
 	if len(queries) > 0 {
 		for k, v := range queries {

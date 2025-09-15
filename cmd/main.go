@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"ladder/handlers"
-	"ladder/handlers/cli"
+	"github.com/everywall/ladder/handlers"
+	"github.com/everywall/ladder/handlers/cli"
 
 	"github.com/akamensky/argparse"
 	"github.com/gofiber/fiber/v2"
