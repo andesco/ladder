@@ -5,10 +5,13 @@ go 1.21.1
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/akamensky/argparse v1.4.0
+	github.com/everywall/ladder v0.0.0-00010101000000-000000000000
 	github.com/gofiber/fiber/v2 v2.50.0
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v3 v3.0.1
 )
+
+replace github.com/everywall/ladder => ./
 
 require (
 	github.com/andybalholm/brotli v1.0.6 // indirect
