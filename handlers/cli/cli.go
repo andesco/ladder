@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"ladder/pkg/ruleset"
+	"github.com/andesco/ladder/pkg/ruleset"
 
 	"golang.org/x/term"
 )
